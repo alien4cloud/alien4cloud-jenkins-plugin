@@ -22,10 +22,7 @@
   <f:entry title="A4C_domain" field="a4cDomain">
     <f:textbox />
   </f:entry>
-  <f:entry title="use an application" field="useAnApp" description="If checked, this means the following field is an application name. Otherwise, it's a topology template.">
-    <f:checkbox/>
-  </f:entry>
-  <f:entry title="Topology Template/Application name" field="topoTempApp">
+  <f:entry title="Topology Template/Application name" field="topoName">
     <f:textbox />
   </f:entry>
 </j:jelly>

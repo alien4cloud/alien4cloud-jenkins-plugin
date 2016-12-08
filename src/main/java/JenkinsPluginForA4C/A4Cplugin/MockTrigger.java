@@ -8,10 +8,9 @@ public class MockTrigger {
         String password = "admin";
         String port = "8088";
         String a4cEndpoint = "localhost";
-        String topoTempApp = "";
-        Boolean useAnApp = false;
+        String topoName = "MyAppTest";
 
-        A4CPluginBuilder myBuilder=  new A4CPluginBuilder(login,password,port,a4cEndpoint,useAnApp,topoTempApp);
+        A4CPluginBuilder myBuilder=  new A4CPluginBuilder(login,password,port,a4cEndpoint,topoName);
 
         myBuilder.mockMethod();
     }

@@ -1,27 +1,36 @@
 package JenkinsPluginForA4C.A4Cplugin.utils;
 
 
+//import hidden.jth.org.apache.http.HttpEntity;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.util.EntityUtils;
+import org.json.*;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.ContentBody;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
 
 public class AlienDriver {
 
+    //TODO get config from file ?
     private String login = "admin";
     private String password = "admin";
     private String domain = "localhost";
     private int port = 8088;
+
     private CookieStore cookieStore;
     private HttpClientContext localContext;
     private HttpClient httpclient;
@@ -45,7 +54,6 @@ public class AlienDriver {
         this.domain=domain;
         this.port=port;
         init();
-
     }
 
     private boolean checkIsConnected(){
@@ -55,17 +63,16 @@ public class AlienDriver {
     }
 
     public void connect(){
-        //TODO make private
+        //TODO make private ?
         try {
             HttpPost postRequest = new HttpPost("/login?username="+this.login+"&password="+this.password+"&submit=Login");
-            HttpResponse httpResponse = httpclient.execute(target,postRequest,localContext);// execute(hostConfig,getLoginMethod);//localContext, getRequest);
-        } catch (Exception e) {
+            HttpResponse httpResponse = httpclient.execute(target,postRequest,localContext);
+            printResponse(httpResponse);
+            EntityUtils.consume(httpResponse.getEntity());
+        } catch (ClientProtocolException e) {
             e.printStackTrace();
-        } finally {
-            // When HttpClient instance is no longer needed,
-            // shut down the connection manager to ensure
-            // immediate deallocation of all system resources
-            httpclient.getConnectionManager().shutdown();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -76,26 +83,48 @@ public class AlienDriver {
     }
 
     public void loadCSAR(String csarPath){
-        //TODO make private
+        ensureConnection();
         try {
-            HttpPost postRequest = new HttpPost("/rest/csar/");
-
-            List<NameValuePair> params = new ArrayList<NameValuePair>();
-            params.add(new BasicNameValuePair("filecomment", "loaded via Jenkins"));
-            params.add(new BasicNameValuePair("file", csarPath));
-            postRequest.setEntity(new UrlEncodedFormEntity(params));
-
-            HttpResponse httpResponse = httpclient.execute(target,postRequest,localContext);// execute(hostConfig,getLoginMethod);//localContext, getRequest);
-        } catch (Exception e) {
+            HttpPost postRequest = new HttpPost("/rest/csars");
+            FileBody bin = new FileBody(new File(csarPath));
+            HttpEntity entity = MultipartEntityBuilder
+                    .create()
+                    .addPart("file",bin)
+                    .build();
+            postRequest.setEntity(entity);
+            HttpResponse httpResponse = httpclient.execute(target,postRequest,localContext);
+            printResponse(httpResponse);
+            EntityUtils.consume(httpResponse.getEntity());
+        } catch (ClientProtocolException e) {
             e.printStackTrace();
-        } finally {
-            // When HttpClient instance is no longer needed,
-            // shut down the connection manager to ensure
-            // immediate deallocation of all system resources
-            httpclient.getConnectionManager().shutdown();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
+    public void recoverTopology(String topologyName){
+        ensureConnection();
+        try {
+            HttpPut putRequest = new HttpPut("/rest/latest/editor/" + topologyName + ":0.1.0-SNAPSHOT/recover?lastOperationId=null");
+            HttpResponse httpResponse = httpclient.execute(target, putRequest, localContext);
+            printResponse(httpResponse);
+            EntityUtils.consume(httpResponse.getEntity());
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-
+    private void printResponse(HttpResponse httpResponse){
+        try {
+            System.out.println("----------------------------------------------------");
+            System.out.println(httpResponse.getEntity().getContent());
+            System.out.println(httpResponse.getStatusLine().getStatusCode());
+            System.out.println();
+            System.out.println("----------------------------------------------------");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

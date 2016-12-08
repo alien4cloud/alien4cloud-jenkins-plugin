@@ -40,20 +40,18 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
     private final String password;
     private final int port;
     private final String a4cEndpoint;
-    private final String topoTempApp;
-    private final Boolean useAnApp;
+    private final String topoName;
 
     private AlienDriver alienDriver;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public A4CPluginBuilder(String login, String password, String port, String a4cEndpoint, Boolean useAnApp, String topoTempApp) {
+    public A4CPluginBuilder(String login, String password, String port, String a4cEndpoint, String topoName) {
         this.login = login;
         this.password = password;
         //this.port = port;
         this.a4cEndpoint = a4cEndpoint;
-        this.useAnApp = useAnApp;
-        this.topoTempApp = topoTempApp;
+        this.topoName = topoName;
 
         int portValue = 8088;
         try {
@@ -64,6 +62,8 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
         this.port = portValue;
 
         this.alienDriver = new AlienDriver(login,password,a4cEndpoint,this.port);
+        //TODO: remove
+        this.alienDriver.connect();
     }
 
     /*
@@ -82,11 +82,8 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
     public String getA4cEndpoint() {
         return a4cEndpoint;
     }
-    public Boolean getUseAnApp() {
-        return useAnApp;
-    }
-    public String getTopoTempApp() {
-        return topoTempApp;
+    public String getTopoName() {
+        return topoName;
     }
 
     @Override
@@ -99,13 +96,13 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
     }
 
     public void mockMethod(){
-        String path = "";
+        String path = System.getProperty("user.dir")+"\\testComponent\\beat-types.zip";
+        System.out.println("file to load : "+path);
         alienDriver.loadCSAR(path);
-        System.out.println("Working Directory = " +
-                System.getProperty("user.dir"));
+
+        String toponame = "MyAppTest";
+        alienDriver.recoverTopology(toponame);
     }
-
-
 
     // Overridden for better type safety.
     // If your plugin doesn't really define any property on Descriptor,

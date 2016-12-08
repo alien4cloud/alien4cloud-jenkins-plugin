@@ -1,0 +1,45 @@
+################### Filebeat Configuration Example #########################
+
+############################# Filebeat ######################################
+filebeat:
+  prospectors:
+    -
+      # Paths that should be crawled and fetched. Glob based paths.
+      # To fetch all ".log" files from a specific level of subdirectories
+      # /var/log/*/*.log can be used.
+      # For each file found under this path, a harvester is started.
+      # Make sure not file is defined twice as this can lead to unexpected behaviour.
+      paths:
+        #FILES_PLACEHOLDER#
+
+###############################################################################
+############################# Libbeat Config ##################################
+# Base config file used by all other beats for using libbeat features
+
+############################# Output ##########################################
+
+# Configure what outputs to use when sending the data collected by the beat.
+# Multiple outputs may be used.
+output:
+
+  ### Elasticsearch as output
+  #ELASTIC_SEARCH_OUTPUT_PLACEHOLDER#
+
+
+  ### Logstash as output
+  #LOGSTASH_OUTPUT_PLACEHOLDER#
+
+############################# Shipper #########################################
+
+shipper:
+
+
+############################# Logging #########################################
+
+# There are three options for the log ouput: syslog, file, stderr.
+# Under Windos systems, the log files are per default sent to the file output,
+# under all other system per default to syslog.
+logging:
+
+
+

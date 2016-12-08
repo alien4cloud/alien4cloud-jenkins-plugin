@@ -1,0 +1,52 @@
+#
+# Starlings
+# Copyright (C) 2016 Bull S.A.S. - All rights reserved
+#
+
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+description: Beats are data shippers for many types of data you want to enrich with Logstash, search and analyze in Elasticsearch, and visualize in Kibana.
+template_name: beats-types
+template_version: 2.1-SNAPSHOT
+template_author: Atos
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN12
+  - logstash-types:2.1-SNAPSHOT
+  - elasticsearch-types:2.1-SNAPSHOT
+  - consul-types:2.1-SNAPSHOT
+
+node_types:
+  starlings.nodes.Beat:
+    abstract: true
+    derived_from: tosca.nodes.SoftwareComponent
+    description: Abstract Component for supporting common operations on Beats
+    tags:
+      icon: /images/beats-icon.png
+    properties:
+      component_dynamic_type:
+        type: string
+        description: dynamic type of component
+        default: TopBeat
+        constraints:
+          - equal: TopBeat
+      prop2:
+        type: string
+        description: prop prop prop
+        default: TopBeat
+        constraints:
+          - equal: TopBeat
+      prop3:
+        type: string
+        description: prop prop prop
+        default: TopBeat
+        constraints:
+          - equal: TopBeat
+      prop4:
+        type: string
+        description: prop prop prop
+        default: TopBeat
+        constraints:
+          - equal: TopBeat
+    artifacts:
+      - utils_scripts: utils_scripts
+        type: tosca.artifacts.File
