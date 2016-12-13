@@ -1,5 +1,6 @@
 package JenkinsPluginForA4C.A4Cplugin;
 import JenkinsPluginForA4C.A4Cplugin.utils.AlienDriver;
+import JenkinsPluginForA4C.A4Cplugin.utils.TopologyDoesNotExistException;
 import hudson.Launcher;
 import hudson.Extension;
 import hudson.FilePath;
@@ -41,17 +42,50 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
     private final int port;
     private final String a4cEndpoint;
     private final String topoName;
+    private final String version;
+    private final String environmentName;
 
     private AlienDriver alienDriver;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public A4CPluginBuilder(String login, String password, String port, String a4cEndpoint, String topoName) {
-        this.login = login;
-        this.password = password;
-        //this.port = port;
-        this.a4cEndpoint = a4cEndpoint;
-        this.topoName = topoName;
+    public A4CPluginBuilder(String login, String password, String port, String a4cEndpoint, String topoName,String version, String environmentName) {
+
+        if(login==null){
+            this.login="admin";
+        }else{
+            this.login=login;
+        }
+
+        if(password==null){
+            this.password="admin";
+        }else{
+            this.password=password;
+        }
+
+        if(topoName==null){
+            this.topoName="myApp";
+        }else{
+            this.topoName=topoName;
+        }
+
+        if(a4cEndpoint==null){
+            this.a4cEndpoint="127.0.0.1";
+        }else{
+            this.a4cEndpoint=a4cEndpoint;
+        }
+
+        if(version==null){
+            this.version="0.1.0-SNAPSHOT";
+        }else{
+            this.version=version;
+        }
+
+        if(environmentName==null){
+            this.environmentName="Environment";
+        }else{
+            this.environmentName=environmentName;
+        }
 
         int portValue = 8088;
         try {
@@ -62,7 +96,7 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
         this.port = portValue;
 
         this.alienDriver = new AlienDriver(login,password,a4cEndpoint,this.port);
-        //TODO: remove
+        //TODO: remove when checkConnection will be ok
         this.alienDriver.connect();
     }
 
@@ -85,23 +119,82 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
     public String getTopoName() {
         return topoName;
     }
+    public String getVersion() {
+        return version;
+    }
+    public String getEnvironmentName() {
+        return environmentName;
+    }
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
         // This is where you 'build' the project.
         // Since this is a dummy, we just say 'hello world' and call that a build.
 
+        listener.getLogger().println("login, "+login+"!");
+        listener.getLogger().println("password, "+password+"!");
+        listener.getLogger().println("port, "+port+"!");
+        listener.getLogger().println("a4cEndpoint, "+a4cEndpoint+"!");
+        listener.getLogger().println("topoName, "+topoName+"!");
+        listener.getLogger().println("version, "+version+"!");
+        listener.getLogger().println("environmentName, "+environmentName+"!");
+        listener.getLogger().println("workspace : , "+workspace+"!");
+
         // This also shows how you can consult the global configuration of the builder
         //AlienDriver.
     }
 
     public void mockMethod(){
-        String path = System.getProperty("user.dir")+"\\testComponent\\beat-types.zip";
-        System.out.println("file to load : "+path);
-        alienDriver.loadCSAR(path);
+        //>LOAD CSAR
+        //String path = System.getProperty("user.dir")+"\\testComponent\\beat-types.zip";
+        //System.out.println("file to load : "+path);
+        //alienDriver.loadCSAR(path);
 
-        String toponame = "MyAppTest";
-        alienDriver.recoverTopology(toponame);
+        //>RECOVER TOPOLOGY
+        //String toponame = "MyAppTest";
+        //String version = "0.1.0-SNAPSHOT";
+        //alienDriver.recoverTopology(toponame,version);
+
+        //>GET INFO APP OR TEMP
+        String toponame = "MyApp1";
+        String version = "0.1.0-SNAPSHOT";
+        String environmentName = "Environment";
+
+        String environmentId = alienDriver.getEnvId(toponame,environmentName);
+
+        boolean res = false;
+        try {
+            res = alienDriver.topologyIsFromApp(toponame,version);
+        } catch (TopologyDoesNotExistException e) {
+            e.printStackTrace();
+        }
+        System.out.println("is an app : "+res);
+
+        //CHECK IF APP IS DEPLOYED
+        String mydepId = alienDriver.appIsDeployed(toponame,environmentId);
+
+        //UNDEPLOYING
+        if(mydepId!=null) {
+            String status = alienDriver.getDeploymentStatus(mydepId);
+            System.out.println("App status : " + status);
+            if(!status.equals("UNDEPLOYED")) {
+                System.out.println("undeploying ...");
+                alienDriver.undeployApplication(mydepId);
+                while (!status.equals("UNDEPLOYED")) {
+                    System.out.println("application is still deployed");
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    status = alienDriver.getDeploymentStatus(mydepId);
+                }
+                System.out.println("application is undeployed");
+            }
+        }
+
+        //DEPLOYING
+        alienDriver.deployApplication(toponame,environmentId);
     }
 
     // Overridden for better type safety.
@@ -181,7 +274,7 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "Say hello world";
+            return "update A4C app";
         }
 
         @Override

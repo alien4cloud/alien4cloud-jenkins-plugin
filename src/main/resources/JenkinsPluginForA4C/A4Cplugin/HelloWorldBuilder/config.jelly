@@ -25,4 +25,10 @@
   <f:entry title="Topology Template/Application name" field="topoName">
     <f:textbox />
   </f:entry>
+  <f:entry title="Topology Template/Application version" field="version">
+    <f:textbox />
+  </f:entry>
+  <f:entry title="Topology Template/Application environment" field="environmentName">
+    <f:textbox />
+  </f:entry>
 </j:jelly>
