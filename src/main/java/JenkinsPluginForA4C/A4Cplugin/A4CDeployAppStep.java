@@ -1,23 +1,27 @@
 package JenkinsPluginForA4C.A4Cplugin;
+
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+
+import jenkins.tasks.SimpleBuildStep;
+import net.sf.json.JSONObject;
+
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+
 import JenkinsPluginForA4C.A4Cplugin.utils.AlienDriver;
 import JenkinsPluginForA4C.A4Cplugin.utils.TopologyDoesNotExistException;
-import hudson.Launcher;
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.util.FormValidation;
+import hudson.Launcher;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
-import jenkins.tasks.SimpleBuildStep;
-import net.sf.json.JSONObject;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.QueryParameter;
-
-import javax.servlet.ServletException;
-import java.io.IOException;
+import hudson.tasks.Builder;
+import hudson.util.FormValidation;
 
 /**
  * Sample {@link Builder}.
@@ -25,7 +29,7 @@ import java.io.IOException;
  * <p>
  * When the user configures the project and enables this builder,
  * {@link DescriptorImpl#newInstance(StaplerRequest)} is invoked
- * and a new {@link A4CPluginBuilder} is created. The created
+ * and a new {@link A4CDeployAppStep} is created. The created
  * instance is persisted to the project configuration XML by using
  * XStream, so this allows you to use instance fields (like {@link #login})
  * to remember the configuration.
@@ -35,33 +39,23 @@ import java.io.IOException;
  *
  * @author Kohsuke Kawaguchi
  */
-public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
+public class A4CDeployAppStep extends Builder implements SimpleBuildStep {
 
-    //fields from configuration
-    private final String newCSARPath;
     private final String login;
     private final String password;
     private final int port;
     private final String a4cDomain;
     private final String topoName;
-    private final String version;
     private final String environmentName;
     private final Boolean waitForDeployEnd;
 
-    private final Boolean useApplication;
     private AlienDriver alienDriver;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public A4CPluginBuilder(String newCSARPath,String login, String password, String port, String a4cDomain, String topoName,String version, String environmentName,Boolean waitForDeployEnd) {
+    public A4CDeployAppStep(String login, String password, String port, String a4cDomain, String topoName, String environmentName,Boolean waitForDeployEnd) {
 
         this.waitForDeployEnd=waitForDeployEnd;
-
-        if(newCSARPath==null){
-            this.newCSARPath=null;
-        }else{
-            this.newCSARPath=newCSARPath;
-        }
 
         if(login==null){
             this.login="admin";
@@ -87,18 +81,10 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
             this.a4cDomain=a4cDomain;
         }
 
-        if(version==null){
-            this.version="0.1.0-SNAPSHOT";
-        }else{
-            this.version=version;
-        }
-
         if(environmentName==null){
             this.environmentName=null;
-            this.useApplication=false;
         }else{
             this.environmentName=environmentName;
-            this.useApplication=true;
         }
 
         int portValue = 8088;
@@ -117,7 +103,6 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
     /*
      * We'll use this from the {@code config.jelly}.
      */
-    public String getNewCSARPath(){return newCSARPath;}
     public String getLogin() {
         return login;
     }
@@ -133,9 +118,6 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
     public String getTopoName() {
         return topoName;
     }
-    public String getVersion() {
-        return version;
-    }
     public String getEnvironmentName() {
         return environmentName;
     }
@@ -145,35 +127,28 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
+        //TODO be sure a location placment policy has been defined
+        //or allow user to configure one via Jenkins
 
-        if(this.newCSARPath==null){
-            //TODO: throw error
-        }
-        //LOAD CSAR
-        listener.getLogger().println("loading CSAR file into alien : "+this.newCSARPath);
-        alienDriver.loadCSAR(this.newCSARPath);
-
-        //RECOVER TOPOLOGY
-        listener.getLogger().println("recovering topology "+this.topoName+":"+this.version+" ...");
-        alienDriver.recoverTopology(this.topoName,this.version);
-
-        //If we were handling topology template it's over
-        if(!useApplication)return;
 
         //CHECK IF APP IS DEPLOYED
         String environmentId = alienDriver.getEnvId(this.topoName,this.environmentName);
+        listener.getLogger().println("get Environment Id "+environmentId);
         String deploymentId = alienDriver.appIsDeployed(this.topoName,environmentId);
 
         //UNDEPLOYING
         if(deploymentId!=null) {
             String status = alienDriver.getDeploymentStatus(deploymentId);
             if(!status.equals("UNDEPLOYED")) {
-                listener.getLogger().println("undeploying application "+this.topoName);
+                listener.getLogger().println("Undeploying application "+this.topoName);
                 alienDriver.undeployApplication(deploymentId);
                 alienDriver.waitForApplicationStatus(deploymentId,"UNDEPLOYED");
             }
+        }else{
+            listener.getLogger().println("Application is undeployed");
         }
 
+        listener.getLogger().println("Deploying application ...");
         //DEPLOYING
         alienDriver.deployApplication(this.topoName,environmentId);
         if(waitForDeployEnd){
@@ -200,6 +175,14 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
      */
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+        /**
+         * To persist global configuration information,
+         * simply store it in a field and call save().
+         *
+         * <p>
+         * If you don't want fields to be persisted, use {@code transient}.
+         */
+        //private boolean useFrench;
 
         /**
          * In order to load the persisted global configuration, you have to 
@@ -224,40 +207,9 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
          *
          */
         public FormValidation doCheckLogin(@QueryParameter String value)
-            //TODO : we should use jenkins credentials instead if not valued
                 throws IOException, ServletException {
             if (value.length() == 0)
                 return FormValidation.error("Please set a login");
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckA4cDomain(@QueryParameter String value)
-                throws IOException, ServletException {
-            if (value.length() == 0)
-                return FormValidation.error("Please set an A4C address");
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckPassword(@QueryParameter String value)
-            //TODO : we should use jenkins credentials instead if not valued
-                throws IOException, ServletException {
-            if (value.length() == 0)
-                return FormValidation.error("Please set an A4C address");
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckTopoName(@QueryParameter String value)
-                throws IOException, ServletException {
-            if (value.length() == 0)
-                return FormValidation.error("Please set a topology name");
-            return FormValidation.ok();
-        }
-
-
-        public FormValidation doCheckVersion(@QueryParameter String value)
-                throws IOException, ServletException {
-            if (value.length() == 0)
-                return FormValidation.error("Please set a version");
             return FormValidation.ok();
         }
 
@@ -282,7 +234,7 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "A4C - update and redeploy app";
+            return "A4C - deploy an application";
         }
 
         @Override
@@ -295,6 +247,16 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
             save();
             return super.configure(req,formData);
         }
+
+        /**
+         * This method returns true if the global configuration says we should speak French.
+         *
+         * The method name is bit awkward because global.jelly calls this method to determine
+         * the initial state of the checkbox by the naming convention.
+         */
+        /*public boolean getUseFrench() {
+            return useFrench;
+        }*/
     }
 }
 

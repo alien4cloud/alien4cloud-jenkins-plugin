@@ -10,6 +10,9 @@
     Creates a text field that shows the value of the "name" property.
     When submitted, it will be passed to the corresponding constructor parameter.
   -->
+  <f:entry title="targeted new csar" field="newCSARPath">
+    <f:textbox />
+  </f:entry>
   <f:entry title="Login" field="login">
     <f:textbox />
   </f:entry>
@@ -17,18 +20,21 @@
     <f:textbox />
   </f:entry>
   <f:entry title="A4C Port" field="port">
-    <f:textbox />
+    <f:textbox value="8088"/>
   </f:entry>
   <f:entry title="A4C_domain" field="a4cDomain">
-    <f:textbox />
+    <f:textbox value="127.0.0.1"/>
   </f:entry>
   <f:entry title="Topology Template/Application name" field="topoName">
     <f:textbox />
   </f:entry>
   <f:entry title="Topology Template/Application version" field="version">
-    <f:textbox />
+    <f:textbox value="0.1.0-SNAPSHOT"/>
   </f:entry>
-  <f:entry title="Topology Template/Application environment" field="environmentName">
-    <f:textbox />
+  <f:entry title="Application environment" field="environmentName">
+    <f:textbox value="Environment"/>
+  </f:entry>
+  <f:entry title="Wait for deployment to finish" field="waitForDeployEnd">
+    <f:checkbox/>
   </f:entry>
 </j:jelly>

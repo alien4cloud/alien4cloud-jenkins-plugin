@@ -28,8 +28,8 @@
     -->
   </properties>
 
-  <name>TODO Plugin</name>
-  <description>TODO</description>
+  <name>A4C Plugin</name>
+  <description>Allow jenkins to interact with a running A4C instance</description>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/TODO+Plugin</url>
 
   <!-- The default licence for Jenkins OSS Plugins is MIT. Substitute for the applicable one if needed. -->
@@ -135,5 +135,4 @@
         <version>2.18-1</version>
       </dependency>
     </dependencies>
-
 </project>

@@ -43,6 +43,8 @@ public class AlienDriver {
         this.target = new HttpHost(this.domain, port, "http");
         this.localContext.setAttribute(HttpClientContext.COOKIE_STORE,cookieStore);
         this.httpclient = HttpClientBuilder.create().build();
+        //TODO : remove when checkIsConnected is ok
+        connect();
     }
 
     public AlienDriver(){
@@ -55,6 +57,19 @@ public class AlienDriver {
         this.domain=domain;
         this.port=port;
         init();
+    }
+
+    public void waitForApplicationStatus(String deploymentId,String status){
+        String currentStatus = getDeploymentStatus(deploymentId);
+        while (!currentStatus.equals(status)) {
+            try {
+                //TODO : configurable ?
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            currentStatus = getDeploymentStatus(deploymentId);
+        }
     }
 
     private boolean checkIsConnected(){
@@ -118,7 +133,7 @@ public class AlienDriver {
         }
     }
 
-    public Boolean topologyIsFromApp(String topologyName,String version) throws TopologyDoesNotExistException{
+    public Boolean topologyIsFromApp(String topologyName,String version) /*throws TopologyDoesNotExistException*/{
         ensureConnection();
         boolean res = false;
         try {
@@ -126,8 +141,8 @@ public class AlienDriver {
             HttpResponse httpResponse = httpclient.execute(target, getRequest, localContext);
             printResponse(httpResponse);
 
-            if(httpResponse.getStatusLine().getStatusCode() == 404)
-                throw new TopologyDoesNotExistException("Topology "+topologyName+" with version "+version+" does not exist");
+            //if(httpResponse.getStatusLine().getStatusCode() == 404)
+                //throw new TopologyDoesNotExistException("Topology "+topologyName+" with version "+version+" does not exist");
 
             String json_string = EntityUtils.toString(httpResponse.getEntity());
             JSONObject temp1 = new JSONObject(json_string);
@@ -223,7 +238,7 @@ public class AlienDriver {
             JSONObject temp1 = new JSONObject(json_string);
             JSONArray envArray = temp1.getJSONObject("data").getJSONArray("data");
             for (Object env : envArray) {
-                System.out.println(((JSONObject) env).getString("name"));
+                //System.out.println(((JSONObject) env).getString("name"));
                 if (((JSONObject) env).getString("name").equals(environmentName)) {
                     environmentId = ((JSONObject) env).getString("id");
                     break;
