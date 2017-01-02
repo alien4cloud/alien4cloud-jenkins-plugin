@@ -5,7 +5,7 @@ import JenkinsPluginForA4C.A4Cplugin.utils.AlienDriver;
 
 public class MockTrigger {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception{
         String login = "admin";
         String password = "admin";
         String port = "8088";

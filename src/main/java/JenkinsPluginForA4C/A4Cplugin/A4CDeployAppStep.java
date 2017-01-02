@@ -97,7 +97,7 @@ public class A4CDeployAppStep extends Builder implements SimpleBuildStep {
 
         this.alienDriver = new AlienDriver(login,password,a4cDomain,this.port);
         //TODO: remove when checkConnection will be ok
-        this.alienDriver.connect();
+        //this.alienDriver.ensureConnection();
     }
 
     /*
@@ -127,33 +127,39 @@ public class A4CDeployAppStep extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
+        this.alienDriver.ensureConnection();
         //TODO be sure a location placment policy has been defined
         //or allow user to configure one via Jenkins
-
-
         //CHECK IF APP IS DEPLOYED
-        String environmentId = alienDriver.getEnvId(this.topoName,this.environmentName);
-        listener.getLogger().println("get Environment Id "+environmentId);
-        String deploymentId = alienDriver.appIsDeployed(this.topoName,environmentId);
+        String environmentId = null;
+        try{
+            environmentId = alienDriver.getEnvId(this.topoName,this.environmentName);
+            listener.getLogger().println("get Environment Id "+environmentId);
+            String deploymentId = alienDriver.appIsDeployed(this.topoName,environmentId);
 
-        //UNDEPLOYING
-        if(deploymentId!=null) {
-            String status = alienDriver.getDeploymentStatus(deploymentId);
-            if(!status.equals("UNDEPLOYED")) {
-                listener.getLogger().println("Undeploying application "+this.topoName);
-                alienDriver.undeployApplication(deploymentId);
-                alienDriver.waitForApplicationStatus(deploymentId,"UNDEPLOYED");
+            //UNDEPLOYING
+            if(deploymentId!=null) {
+                String status = alienDriver.getDeploymentStatus(deploymentId);
+                if(!status.equals("UNDEPLOYED")) {
+                    listener.getLogger().println("Undeploying application "+this.topoName);
+                    alienDriver.undeployApplication(deploymentId);
+                    alienDriver.waitForApplicationStatus(deploymentId,"UNDEPLOYED");
+                }
+            }else{
+                listener.getLogger().println("Application is undeployed");
             }
-        }else{
-            listener.getLogger().println("Application is undeployed");
+
+            listener.getLogger().println("Deploying application ...");
+            //DEPLOYING
+            alienDriver.deployApplication(this.topoName,environmentId);
+            if(waitForDeployEnd){
+                alienDriver.waitForApplicationStatus(deploymentId,"DEPLOYED");
+            }
+        }catch (Exception e){
+            listener.getLogger().println(e.getMessage());
         }
 
-        listener.getLogger().println("Deploying application ...");
-        //DEPLOYING
-        alienDriver.deployApplication(this.topoName,environmentId);
-        if(waitForDeployEnd){
-            alienDriver.waitForApplicationStatus(deploymentId,"DEPLOYED");
-        }
+
     }
 
 

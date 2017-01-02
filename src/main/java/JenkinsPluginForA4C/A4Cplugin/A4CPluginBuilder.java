@@ -111,7 +111,7 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
 
         this.alienDriver = new AlienDriver(login,password,a4cDomain,this.port);
         //TODO: remove when checkConnection will be ok
-        this.alienDriver.connect();
+        this.alienDriver.ensureConnection();
     }
 
     /*
@@ -161,16 +161,26 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
         if(!useApplication)return;
 
         //CHECK IF APP IS DEPLOYED
-        String environmentId = alienDriver.getEnvId(this.topoName,this.environmentName);
+        String environmentId = null;
+        try{
+            alienDriver.getEnvId(this.topoName,this.environmentName);
+        }catch (Exception e){
+            listener.getLogger().println(e.getMessage());
+        }
         String deploymentId = alienDriver.appIsDeployed(this.topoName,environmentId);
 
         //UNDEPLOYING
         if(deploymentId!=null) {
-            String status = alienDriver.getDeploymentStatus(deploymentId);
-            if(!status.equals("UNDEPLOYED")) {
-                listener.getLogger().println("undeploying application "+this.topoName);
-                alienDriver.undeployApplication(deploymentId);
-                alienDriver.waitForApplicationStatus(deploymentId,"UNDEPLOYED");
+            try {
+                String status = alienDriver.getDeploymentStatus(deploymentId);
+                if (!status.equals("UNDEPLOYED")) {
+                    listener.getLogger().println("undeploying application " + this.topoName);
+                    alienDriver.undeployApplication(deploymentId);
+                    alienDriver.waitForApplicationStatus(deploymentId, "UNDEPLOYED");
+                }
+            }
+            catch (Exception e){
+                listener.getLogger().println(e.getMessage());
             }
         }
 

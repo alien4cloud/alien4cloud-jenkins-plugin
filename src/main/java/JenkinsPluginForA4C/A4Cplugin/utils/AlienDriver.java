@@ -9,6 +9,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.json.*;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -26,6 +28,7 @@ import java.util.List;
 
 public class AlienDriver {
 
+    //Logger LOGGER = LogManager.getLogger(this.getClass());
     //TODO get config from file ?
     private String login = "admin";
     private String password = "admin";
@@ -44,7 +47,12 @@ public class AlienDriver {
         this.localContext.setAttribute(HttpClientContext.COOKIE_STORE,cookieStore);
         this.httpclient = HttpClientBuilder.create().build();
         //TODO : remove when checkIsConnected is ok
-        connect();
+        /*try {
+            ensureConnection();
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }*/
     }
 
     public AlienDriver(){
@@ -60,41 +68,60 @@ public class AlienDriver {
     }
 
     public void waitForApplicationStatus(String deploymentId,String status){
-        String currentStatus = getDeploymentStatus(deploymentId);
-        while (!currentStatus.equals(status)) {
-            try {
-                //TODO : configurable ?
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        String currentStatus;
+        try{
             currentStatus = getDeploymentStatus(deploymentId);
+
+            while (!currentStatus.equals(status)) {
+                try {
+                    //TODO : configurable ?
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                currentStatus = getDeploymentStatus(deploymentId);
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
 
-    private boolean checkIsConnected(){
-        //TODO
-        //get /rest/v1/auth/status
-        return true;
+    private boolean checkIsConnected() throws IOException{
+        HttpGet getRequest = new HttpGet("/rest/v1/auth/status");
+        HttpResponse response = httpclient.execute(target,getRequest,localContext);
+        if(response.getStatusLine().getStatusCode() == 200){
+            boolean isLogged = (new JSONObject(EntityUtils.toString(response.getEntity())))
+                    .getJSONObject("data").getBoolean("isLogged");
+            if(isLogged) {
+                System.out.println("Connected");
+                return true;
+            }
+        }
+        System.out.println("not Connected");
+        return false;
     }
 
-    public void connect(){
+    private void connect() throws Exception{
         //TODO make private ?
-        try {
-            HttpPost postRequest = new HttpPost("/login?username="+this.login+"&password="+this.password+"&submit=Login");
-            HttpResponse httpResponse = httpclient.execute(target,postRequest,localContext);
-            printResponse(httpResponse);
-            EntityUtils.consume(httpResponse.getEntity());
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        HttpPost postRequest = new HttpPost("/login?username="+this.login+"&password="+this.password+"&submit=Login");
+        HttpResponse httpResponse = httpclient.execute(target,postRequest,localContext);
+        printResponse(httpResponse);
+        EntityUtils.consume(httpResponse.getEntity());
     }
 
-    private void ensureConnection(){
-        if(!checkIsConnected()){
-            connect();
+    public void ensureConnection(){
+        try {
+            int retry = 3;
+            while ((!checkIsConnected())&&(retry > 0)) {
+                System.out.println("Try to connect to Alien4Cloud");
+                connect();
+                retry --;
+                Thread.sleep(2000);
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -195,7 +222,7 @@ public class AlienDriver {
         }
     }
 
-    public String  getDeploymentStatus(String deploymentId) {
+    public String  getDeploymentStatus(String deploymentId) throws Exception{
         ensureConnection();
         String status="unknown";
         try {
@@ -205,6 +232,9 @@ public class AlienDriver {
             String json_string = EntityUtils.toString(httpResponse.getEntity());
             EntityUtils.consume(httpResponse.getEntity());
             JSONObject temp1 = new JSONObject(json_string);
+            if(temp1.isNull("data")){
+                throw new Exception(temp1.getString("message"));
+            }
             status = temp1.getString("data");
         } catch (ClientProtocolException e) {
             e.printStackTrace();
@@ -214,7 +244,7 @@ public class AlienDriver {
         return status;
     }
 
-    public String getEnvId(String applicationName,String environmentName) {
+    public String getEnvId(String applicationName,String environmentName) throws Exception {
         ensureConnection();
         String environmentId = null;
 
@@ -231,6 +261,9 @@ public class AlienDriver {
             HttpResponse httpResponse = httpclient.execute(target, postRequest, localContext);
             printResponse(httpResponse);
             //TODO throws app does not exist
+            if(httpResponse.getStatusLine().getStatusCode() ==404){
+                throw new Exception("Application "+applicationName+" not found.");
+            }
 
             //get the one with correct env name :
             String json_string = EntityUtils.toString(httpResponse.getEntity());
@@ -290,8 +323,13 @@ public class AlienDriver {
             System.out.println("----------------------------------------------------");
             System.out.println(httpResponse.getEntity().getContent());
             System.out.println(httpResponse.getStatusLine().getStatusCode());
-            System.out.println();
+            System.out.println(httpResponse.getStatusLine().getReasonPhrase());
             System.out.println("----------------------------------------------------");
+           /* LOGGER.info("----------------------------------------------------");
+            LOGGER.info(httpResponse.getEntity().getContent());
+            LOGGER.info(httpResponse.getStatusLine().getStatusCode());
+            LOGGER.info(httpResponse.getStatusLine().getReasonPhrase());
+            LOGGER.info("----------------------------------------------------");*/
         } catch (IOException e) {
             e.printStackTrace();
         }
