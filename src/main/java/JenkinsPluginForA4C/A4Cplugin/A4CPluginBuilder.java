@@ -110,8 +110,6 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
         this.port = portValue;
 
         this.alienDriver = new AlienDriver(login,password,a4cDomain,this.port);
-        //TODO: remove when checkConnection will be ok
-        this.alienDriver.ensureConnection();
     }
 
     /*
@@ -146,48 +144,53 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
 
-        if(this.newCSARPath==null){
-            //TODO: throw error
-        }
-        //LOAD CSAR
-        listener.getLogger().println("loading CSAR file into alien : "+this.newCSARPath);
-        alienDriver.loadCSAR(this.newCSARPath);
-
-        //RECOVER TOPOLOGY
-        listener.getLogger().println("recovering topology "+this.topoName+":"+this.version+" ...");
-        alienDriver.recoverTopology(this.topoName,this.version);
-
-        //If we were handling topology template it's over
-        if(!useApplication)return;
-
-        //CHECK IF APP IS DEPLOYED
-        String environmentId = null;
         try{
-            alienDriver.getEnvId(this.topoName,this.environmentName);
-        }catch (Exception e){
-            listener.getLogger().println(e.getMessage());
-        }
-        String deploymentId = alienDriver.appIsDeployed(this.topoName,environmentId);
+            if(this.newCSARPath==null){
+                //TODO: throw error
+            }
 
-        //UNDEPLOYING
-        if(deploymentId!=null) {
-            try {
-                String status = alienDriver.getDeploymentStatus(deploymentId);
-                if (!status.equals("UNDEPLOYED")) {
-                    listener.getLogger().println("undeploying application " + this.topoName);
-                    alienDriver.undeployApplication(deploymentId);
-                    alienDriver.waitForApplicationStatus(deploymentId, "UNDEPLOYED");
+            //LOAD CSAR
+            listener.getLogger().println("loading CSAR file into alien : "+this.newCSARPath);
+            alienDriver.loadCSAR(this.newCSARPath);
+
+            //RECOVER TOPOLOGY
+            listener.getLogger().println("recovering topology "+this.topoName+":"+this.version+" ...");
+            alienDriver.recoverTopology(this.topoName,this.version);
+
+            //If we were handling topology template it's over
+            //isAnApplication = alienDriver.topologyIsFromApp(this.topoName,this.version);
+            if(!useApplication)return;
+
+            //CHECK IF APP IS DEPLOYED
+            String environmentId = null;
+
+            alienDriver.getEnvId(this.topoName,this.environmentName);
+
+            String deploymentId = alienDriver.appIsDeployed(this.topoName,environmentId);
+
+            //UNDEPLOYING
+            if(deploymentId!=null) {
+                try {
+                    String status = alienDriver.getDeploymentStatus(deploymentId);
+                    if (!status.equals("UNDEPLOYED")) {
+                        listener.getLogger().println("undeploying application " + this.topoName);
+                        alienDriver.undeployApplication(deploymentId);
+                        alienDriver.waitForApplicationStatus(deploymentId, "UNDEPLOYED");
+                    }
+                }
+                catch (Exception e){
+                    listener.getLogger().println(e.getMessage());
                 }
             }
-            catch (Exception e){
-                listener.getLogger().println(e.getMessage());
-            }
-        }
 
-        //DEPLOYING
-        alienDriver.deployApplication(this.topoName,environmentId);
-        if(waitForDeployEnd){
-            alienDriver.waitForApplicationStatus(deploymentId,"DEPLOYED");
+            //DEPLOYING
+            alienDriver.deployApplication(this.topoName,environmentId);
+            if(waitForDeployEnd){
+                alienDriver.waitForApplicationStatus(deploymentId,"DEPLOYED");
+            }
+
+        }catch (Exception e){
+            listener.getLogger().println(e.getMessage());
         }
     }
 

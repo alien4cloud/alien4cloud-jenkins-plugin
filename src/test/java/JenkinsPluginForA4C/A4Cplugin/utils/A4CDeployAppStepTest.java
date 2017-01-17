@@ -7,8 +7,17 @@ import hudson.model.*;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestTemplate;
+import org.apache.http.client.methods.*;
+
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 
 /**
@@ -18,18 +27,26 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @ContextConfiguration("classpath:application-test-context.xml")
 public class A4CDeployAppStepTest {
 
+    //ResponseEntity<> mockResponseEntity;
+    MockRestServiceServer mockServer;
+    RestTemplate mockRestTemplate;
+
     String login = "admin";
     String password = "admin";
     String port = "8088";
     String a4cDomain = "localhost";
-    String topoName = "ApacheApp";
+    String topoName = "TestJenkins3";
     String environmentName = "Environment";
     Boolean waitForDeployEnd = true;
+
     @Rule
     public JenkinsRule j = new JenkinsRule();
 
     @Before
     public void init(){
+
+        mockRestTemplate = new RestTemplate();
+        mockServer = MockRestServiceServer.createServer(mockRestTemplate);
     }
 
     @Test

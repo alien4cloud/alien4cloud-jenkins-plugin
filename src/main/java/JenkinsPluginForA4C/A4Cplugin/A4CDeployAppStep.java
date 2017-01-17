@@ -127,7 +127,7 @@ public class A4CDeployAppStep extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
-        this.alienDriver.ensureConnection();
+
         //TODO be sure a location placment policy has been defined
         //or allow user to configure one via Jenkins
         //CHECK IF APP IS DEPLOYED

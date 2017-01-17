@@ -46,13 +46,6 @@ public class AlienDriver {
         this.target = new HttpHost(this.domain, port, "http");
         this.localContext.setAttribute(HttpClientContext.COOKIE_STORE,cookieStore);
         this.httpclient = HttpClientBuilder.create().build();
-        //TODO : remove when checkIsConnected is ok
-        /*try {
-            ensureConnection();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }*/
     }
 
     public AlienDriver(){
@@ -65,6 +58,11 @@ public class AlienDriver {
         this.domain=domain;
         this.port=port;
         init();
+    }
+
+    //make tests easy to run
+    public void setHttpclient(HttpClient newHttpClient){
+        this.httpclient=newHttpClient;
     }
 
     public void waitForApplicationStatus(String deploymentId,String status){
@@ -87,45 +85,65 @@ public class AlienDriver {
         }
     }
 
-    private boolean checkIsConnected() throws IOException{
+    private boolean checkIsConnected(){
         HttpGet getRequest = new HttpGet("/rest/v1/auth/status");
-        HttpResponse response = httpclient.execute(target,getRequest,localContext);
-        if(response.getStatusLine().getStatusCode() == 200){
-            boolean isLogged = (new JSONObject(EntityUtils.toString(response.getEntity())))
-                    .getJSONObject("data").getBoolean("isLogged");
-            if(isLogged) {
-                System.out.println("Connected");
-                return true;
+        HttpResponse response;
+        try {
+            response = httpclient.execute(target,getRequest,localContext);
+            if(response.getStatusLine().getStatusCode() == 200){
+                JSONObject test = new JSONObject(EntityUtils.toString(response.getEntity()));
+                JSONObject test2 = test.getJSONObject("data");
+                boolean isLogged = test2.getBoolean("isLogged");
+
+                //TODO : this does not work with mocked object, don't know why
+                //boolean isLogged = (new JSONObject(EntityUtils.toString(response.getEntity())))
+                //        .getJSONObject("data").getBoolean("isLogged");
+
+
+                if(isLogged) {
+                    System.out.println("still connected to A4C ...");
+                    return true;
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        System.out.println("not Connected");
+        System.out.println("not Connected to A4C");
         return false;
     }
 
-    private void connect() throws Exception{
-        //TODO make private ?
+    private void connect() throws ConnectionFailedException{
         HttpPost postRequest = new HttpPost("/login?username="+this.login+"&password="+this.password+"&submit=Login");
-        HttpResponse httpResponse = httpclient.execute(target,postRequest,localContext);
-        printResponse(httpResponse);
-        EntityUtils.consume(httpResponse.getEntity());
+        HttpResponse httpResponse = null;
+        boolean connectOk = false;
+        try {
+            httpResponse = httpclient.execute(target,postRequest,localContext);
+            printResponse(httpResponse);
+            connectOk = httpResponse.getStatusLine().getStatusCode() == 200;
+            EntityUtils.consume(httpResponse.getEntity());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if(!connectOk)
+            throw new ConnectionFailedException(target.getHostName(),Integer.toString(target.getPort()));
+
     }
 
-    public void ensureConnection(){
-        try {
+    public void ensureConnection() throws ConnectionFailedException{
             int retry = 3;
             while ((!checkIsConnected())&&(retry > 0)) {
                 System.out.println("Try to connect to Alien4Cloud");
                 connect();
                 retry --;
-                Thread.sleep(2000);
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
     }
 
-    public void loadCSAR(String csarPath){
+    public void loadCSAR(String csarPath) throws ConnectionFailedException{
         ensureConnection();
         try {
             HttpPost postRequest = new HttpPost("/rest/csars");
@@ -146,11 +164,12 @@ public class AlienDriver {
     }
 
     //TODO : throws TopologyDoesNotExistException
-    public void recoverTopology(String topologyName,String version){
+    public void recoverTopology(String topologyName,String version) throws ConnectionFailedException,TopologyDoesNotExistException{
         ensureConnection();
         try {
             HttpPut putRequest = new HttpPut("/rest/latest/editor/" + topologyName + ":"+version+"/recover?lastOperationId=null");
             HttpResponse httpResponse = httpclient.execute(target, putRequest, localContext);
+            if(httpResponse.getStatusLine().getStatusCode() == 404) throw new TopologyDoesNotExistException();
             printResponse(httpResponse);
             EntityUtils.consume(httpResponse.getEntity());
         } catch (ClientProtocolException e) {
@@ -160,7 +179,7 @@ public class AlienDriver {
         }
     }
 
-    public Boolean topologyIsFromApp(String topologyName,String version) /*throws TopologyDoesNotExistException*/{
+    public Boolean topologyIsFromApp(String topologyName,String version) throws ConnectionFailedException,TopologyDoesNotExistException{
         ensureConnection();
         boolean res = false;
         try {
@@ -187,7 +206,7 @@ public class AlienDriver {
         return res;
     }
 
-    public void undeployApplication(String deploymentId){
+    public void undeployApplication(String deploymentId) throws ConnectionFailedException{
         //GET /rest/deployments/{deploymentId}/undeploy
         ensureConnection();
         try {
@@ -203,7 +222,7 @@ public class AlienDriver {
         }
     }
 
-    public void deployApplication(String applicationId,String applicationEnvironmentId){
+    public void deployApplication(String applicationId,String applicationEnvironmentId) throws ConnectionFailedException{
 
         ensureConnection();
         try {
@@ -244,7 +263,7 @@ public class AlienDriver {
         return status;
     }
 
-    public String getEnvId(String applicationName,String environmentName) throws Exception {
+    public String getEnvId(String applicationName,String environmentName) throws ApplicationDoesNotExistException,ConnectionFailedException {
         ensureConnection();
         String environmentId = null;
 
@@ -262,7 +281,7 @@ public class AlienDriver {
             printResponse(httpResponse);
             //TODO throws app does not exist
             if(httpResponse.getStatusLine().getStatusCode() ==404){
-                throw new Exception("Application "+applicationName+" not found.");
+                throw new ApplicationDoesNotExistException(applicationName);
             }
 
             //get the one with correct env name :
@@ -290,7 +309,7 @@ public class AlienDriver {
         return environmentId;
     }
 
-    public String appIsDeployed(String applicationName,String environmentId){
+    public String appIsDeployed(String applicationName,String environmentId) throws ConnectionFailedException{
         ensureConnection();
         String deploymentId=null;
         try {

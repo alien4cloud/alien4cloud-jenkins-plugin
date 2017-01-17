@@ -24,7 +24,7 @@ public class MockTrigger {
 
         AlienDriver alienDriver = new AlienDriver();
         //driver.getEnvId("TestJenkins2","Environment");
-
+        alienDriver.ensureConnection();
 
         //CHECK IF APP IS DEPLOYED
         String environmentId = alienDriver.getEnvId(topoName,environmentName);
