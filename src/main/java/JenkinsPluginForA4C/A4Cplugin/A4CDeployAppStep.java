@@ -12,7 +12,6 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import JenkinsPluginForA4C.A4Cplugin.utils.AlienDriver;
-import JenkinsPluginForA4C.A4Cplugin.utils.TopologyDoesNotExistException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -81,11 +80,7 @@ public class A4CDeployAppStep extends Builder implements SimpleBuildStep {
             this.a4cDomain=a4cDomain;
         }
 
-        if(environmentName==null){
-            this.environmentName=null;
-        }else{
-            this.environmentName=environmentName;
-        }
+        this.environmentName=environmentName;
 
         int portValue = 8088;
         try {

@@ -1,16 +1,15 @@
 package JenkinsPluginForA4C.A4Cplugin.utils;
 
 
-//import hidden.jth.org.apache.http.HttpEntity;
+import JenkinsPluginForA4C.A4Cplugin.utils.exceptions.ApplicationDoesNotExistException;
+import JenkinsPluginForA4C.A4Cplugin.utils.exceptions.ConnectionFailedException;
+import JenkinsPluginForA4C.A4Cplugin.utils.exceptions.TopologyDoesNotExistException;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.json.*;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -112,7 +111,7 @@ public class AlienDriver {
         return false;
     }
 
-    private void connect() throws ConnectionFailedException{
+    private void connect() throws ConnectionFailedException {
         HttpPost postRequest = new HttpPost("/login?username="+this.login+"&password="+this.password+"&submit=Login");
         HttpResponse httpResponse = null;
         boolean connectOk = false;
@@ -163,13 +162,12 @@ public class AlienDriver {
         }
     }
 
-    //TODO : throws TopologyDoesNotExistException
-    public void recoverTopology(String topologyName,String version) throws ConnectionFailedException,TopologyDoesNotExistException{
+    public void recoverTopology(String topologyName,String version) throws ConnectionFailedException,TopologyDoesNotExistException {
         ensureConnection();
         try {
             HttpPut putRequest = new HttpPut("/rest/latest/editor/" + topologyName + ":"+version+"/recover?lastOperationId=null");
             HttpResponse httpResponse = httpclient.execute(target, putRequest, localContext);
-            if(httpResponse.getStatusLine().getStatusCode() == 404) throw new TopologyDoesNotExistException();
+            if(httpResponse.getStatusLine().getStatusCode() == 404) throw new TopologyDoesNotExistException(topologyName,version);
             printResponse(httpResponse);
             EntityUtils.consume(httpResponse.getEntity());
         } catch (ClientProtocolException e) {
@@ -187,8 +185,8 @@ public class AlienDriver {
             HttpResponse httpResponse = httpclient.execute(target, getRequest, localContext);
             printResponse(httpResponse);
 
-            //if(httpResponse.getStatusLine().getStatusCode() == 404)
-                //throw new TopologyDoesNotExistException("Topology "+topologyName+" with version "+version+" does not exist");
+            if(httpResponse.getStatusLine().getStatusCode() == 404)
+                throw new TopologyDoesNotExistException(topologyName,version);
 
             String json_string = EntityUtils.toString(httpResponse.getEntity());
             JSONObject temp1 = new JSONObject(json_string);
@@ -279,7 +277,6 @@ public class AlienDriver {
             postRequest.setEntity(entity);
             HttpResponse httpResponse = httpclient.execute(target, postRequest, localContext);
             printResponse(httpResponse);
-            //TODO throws app does not exist
             if(httpResponse.getStatusLine().getStatusCode() ==404){
                 throw new ApplicationDoesNotExistException(applicationName);
             }
@@ -297,7 +294,7 @@ public class AlienDriver {
                 }
             }
             if (environmentId == null) {
-                //TODO throws env does not exist
+                //throw new Envi (applicationName);
             }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();

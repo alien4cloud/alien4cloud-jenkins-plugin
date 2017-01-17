@@ -1,9 +1,9 @@
-package JenkinsPluginForA4C.A4Cplugin.utils;
+package JenkinsPluginForA4C.A4Cplugin.utils.exceptions;
 
 
 public class ConnectionFailedException extends Exception{
 
-    ConnectionFailedException(String domain,String port){
+    public ConnectionFailedException(String domain,String port){
         super("can't connect to A4C on http://"+domain+":"+port);
     }
 

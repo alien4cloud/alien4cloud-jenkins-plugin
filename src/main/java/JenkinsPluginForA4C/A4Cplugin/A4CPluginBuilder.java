@@ -1,6 +1,5 @@
 package JenkinsPluginForA4C.A4Cplugin;
 import JenkinsPluginForA4C.A4Cplugin.utils.AlienDriver;
-import JenkinsPluginForA4C.A4Cplugin.utils.TopologyDoesNotExistException;
 import hudson.Launcher;
 import hudson.Extension;
 import hudson.FilePath;

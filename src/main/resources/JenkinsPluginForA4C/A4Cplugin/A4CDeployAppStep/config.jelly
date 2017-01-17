@@ -17,16 +17,16 @@
     <f:textbox />
   </f:entry>
   <f:entry title="A4C Port" field="port">
-    <f:textbox value="8088"/>
+    <f:textbox/>
   </f:entry>
   <f:entry title="A4C_domain" field="a4cDomain">
-    <f:textbox value="127.0.0.1"/>
+    <f:textbox/>
   </f:entry>
   <f:entry title="Topology Template/Application name" field="topoName">
     <f:textbox />
   </f:entry>
   <f:entry title="Application environment" field="environmentName">
-    <f:textbox value="Environment"/>
+    <f:textbox/>
   </f:entry>
   <f:entry title="Wait for deployment to finish" field="waitForDeployEnd">
     <f:checkbox/>

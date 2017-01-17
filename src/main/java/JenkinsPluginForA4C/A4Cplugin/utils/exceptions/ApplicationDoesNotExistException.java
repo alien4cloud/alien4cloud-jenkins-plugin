@@ -1,9 +1,9 @@
-package JenkinsPluginForA4C.A4Cplugin.utils;
+package JenkinsPluginForA4C.A4Cplugin.utils.exceptions;
 
 
 public class ApplicationDoesNotExistException extends Exception{
 
-    ApplicationDoesNotExistException(String appName){
+    public ApplicationDoesNotExistException(String appName){
         super("the application "+appName+" does not exist");
     }
 
