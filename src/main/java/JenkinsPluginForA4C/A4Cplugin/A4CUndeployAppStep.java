@@ -230,7 +230,7 @@ public class A4CUndeployAppStep extends Builder implements SimpleBuildStep {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "A4C - deploy an application";
+            return "A4C - undeploy an application";
         }
 
         @Override
