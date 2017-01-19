@@ -9,9 +9,9 @@
     <version>2.11</version>
     <relativePath/>
   </parent>
-  <groupId>JenkinsPluginForA4C</groupId>
-  <artifactId>A4C-plugin</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <groupId>org.alien4cloud</groupId>
+  <artifactId>alien4cloud-jenkins-plugin</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <properties>
@@ -29,7 +29,7 @@
     <junit.version>4.12</junit.version>
   </properties>
 
-  <name>A4C Plugin</name>
+  <name>A4C Jenkins Plugin</name>
   <description>Allow jenkins to interact with a running A4C instance</description>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/TODO+Plugin</url>
 
