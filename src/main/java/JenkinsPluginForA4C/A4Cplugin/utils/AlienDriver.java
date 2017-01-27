@@ -10,6 +10,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.json.*;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -123,23 +125,24 @@ public class AlienDriver {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if(!connectOk)
-            throw new ConnectionFailedException(target.getHostName(),Integer.toString(target.getPort()));
+        //if(!connectOk)
+        //    throw new ConnectionFailedException(target.getHostName(),Integer.toString(target.getPort()));
 
     }
 
     public void ensureConnection() throws ConnectionFailedException{
-            int retry = 3;
-            while ((!checkIsConnected())&&(retry > 0)) {
-                System.out.println("Try to connect to Alien4Cloud");
-                connect();
-                retry --;
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        int retry = 3;
+        while ((!checkIsConnected())&&(retry > 0)) {
+            System.out.println("Try to connect to Alien4Cloud");
+            connect();
+            retry--;
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+        }
+        if(retry==0)throw new ConnectionFailedException(target.getHostName(),Integer.toString(target.getPort()));
     }
 
     public void loadCSAR(String csarPath) throws ConnectionFailedException{
@@ -341,7 +344,7 @@ public class AlienDriver {
             System.out.println(httpResponse.getStatusLine().getStatusCode());
             System.out.println(httpResponse.getStatusLine().getReasonPhrase());
             System.out.println("----------------------------------------------------");
-           /* LOGGER.info("----------------------------------------------------");
+            /*LOGGER.info("----------------------------------------------------");
             LOGGER.info(httpResponse.getEntity().getContent());
             LOGGER.info(httpResponse.getStatusLine().getStatusCode());
             LOGGER.info(httpResponse.getStatusLine().getReasonPhrase());

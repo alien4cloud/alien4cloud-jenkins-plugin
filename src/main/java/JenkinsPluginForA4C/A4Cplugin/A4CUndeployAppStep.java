@@ -91,8 +91,6 @@ public class A4CUndeployAppStep extends Builder implements SimpleBuildStep {
         this.port = portValue;
 
         this.alienDriver = new AlienDriver(login,password,a4cDomain,this.port);
-        //TODO: remove when checkConnection will be ok
-        //this.alienDriver.ensureConnection();
     }
 
     /*
