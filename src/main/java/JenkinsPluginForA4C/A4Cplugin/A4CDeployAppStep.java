@@ -90,7 +90,8 @@ public class A4CDeployAppStep extends Builder implements SimpleBuildStep {
         }
         this.port = portValue;
 
-        this.alienDriver = new AlienDriver(login,password,a4cDomain,this.port);
+        //TODO: remove when checkConnection will be ok
+        //this.alienDriver.ensureConnection();
     }
 
     /*
@@ -120,8 +121,10 @@ public class A4CDeployAppStep extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
-
-        //TODO be sure a location placment policy has been defined
+        if(this.alienDriver == null) {
+            this.alienDriver = new AlienDriver(login, password, a4cDomain, this.port, listener);
+        }
+            //TODO be sure a location placment policy has been defined
         //or allow user to configure one via Jenkins
         //CHECK IF APP IS DEPLOYED
         String environmentId = null;
@@ -144,7 +147,7 @@ public class A4CDeployAppStep extends Builder implements SimpleBuildStep {
 
             listener.getLogger().println("Deploying application ...");
             //DEPLOYING
-            alienDriver.deployApplication(this.topoName,environmentId);
+            deploymentId = alienDriver.deployApplication(this.topoName,environmentId);
             if(waitForDeployEnd){
                 alienDriver.waitForApplicationStatus(deploymentId,"DEPLOYED");
             }

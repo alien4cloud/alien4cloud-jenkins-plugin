@@ -25,7 +25,7 @@ public class MockTrigger {
         AlienDriver alienDriver = new AlienDriver();
         //driver.getEnvId("TestJenkins2","Environment");
         alienDriver.ensureConnection();
-/*
+
         //CHECK IF APP IS DEPLOYED
         String environmentId = alienDriver.getEnvId(topoName,environmentName);
        //listener.getLogger().println("get Environment Id "+environmentId);
@@ -48,7 +48,7 @@ public class MockTrigger {
         alienDriver.deployApplication(topoName,environmentId);
         //if(waitForDeployEnd){
         //    alienDriver.waitForApplicationStatus(deploymentId,"DEPLOYED");
-        //}*/
+        //}
     }
 
 }

@@ -7,4 +7,8 @@ public class ConnectionFailedException extends Exception{
         super("can't connect to A4C on http://"+domain+":"+port);
     }
 
+    public ConnectionFailedException(String domain,String port, String message){
+        super("can't connect to A4C on http://"+domain+":"+port+". Cause :"+message);
+    }
+
 }

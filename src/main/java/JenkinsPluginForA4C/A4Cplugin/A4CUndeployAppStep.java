@@ -90,7 +90,8 @@ public class A4CUndeployAppStep extends Builder implements SimpleBuildStep {
         }
         this.port = portValue;
 
-        this.alienDriver = new AlienDriver(login,password,a4cDomain,this.port);
+        //TODO: remove when checkConnection will be ok
+        //this.alienDriver.ensureConnection();
     }
 
     /*
@@ -120,7 +121,9 @@ public class A4CUndeployAppStep extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
-
+        if(this.alienDriver == null) {
+            this.alienDriver = new AlienDriver(login, password, a4cDomain, this.port,listener);
+        }
         //TODO be sure a location placment policy has been defined
         //or allow user to configure one via Jenkins
         //CHECK IF APP IS DEPLOYED
@@ -228,7 +231,7 @@ public class A4CUndeployAppStep extends Builder implements SimpleBuildStep {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "A4C - undeploy an application";
+            return "A4C - deploy an application";
         }
 
         @Override

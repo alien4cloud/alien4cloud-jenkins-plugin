@@ -108,7 +108,6 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
         }
         this.port = portValue;
 
-        this.alienDriver = new AlienDriver(login,password,a4cDomain,this.port);
     }
 
     /*
@@ -142,6 +141,9 @@ public class A4CPluginBuilder extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
+        if(this.alienDriver == null){
+            this.alienDriver = new AlienDriver(login,password,a4cDomain,this.port,listener);
+        }
 
         try{
             if(this.newCSARPath==null){
