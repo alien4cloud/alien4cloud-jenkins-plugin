@@ -36,7 +36,7 @@ import hudson.util.FormValidation;
  * <p>
  * When a build is performed, the {@link #perform} method will be invoked.
  *
- * @author Kohsuke Kawaguchi
+ * @author A4C TEAM
  */
 public class A4CUndeployAppStep extends Builder implements SimpleBuildStep {
 
@@ -231,7 +231,7 @@ public class A4CUndeployAppStep extends Builder implements SimpleBuildStep {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "A4C - deploy an application";
+            return "A4C - Undeploy an application";
         }
 
         @Override

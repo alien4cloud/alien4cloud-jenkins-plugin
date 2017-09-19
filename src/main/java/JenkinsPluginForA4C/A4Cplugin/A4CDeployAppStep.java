@@ -36,7 +36,7 @@ import hudson.util.FormValidation;
  * <p>
  * When a build is performed, the {@link #perform} method will be invoked. 
  *
- * @author Kohsuke Kawaguchi
+ * @author A4C TEAM
  */
 public class A4CDeployAppStep extends Builder implements SimpleBuildStep {
 
